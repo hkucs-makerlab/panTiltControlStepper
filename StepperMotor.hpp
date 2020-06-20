@@ -31,7 +31,7 @@ class StepperMotor : public AccelStepper {
 
     void setMaxSpeed(float maxSpeedValue) {
       AccelStepper::setMaxSpeed(maxSpeedValue);
-      AccelStepper::setAcceleration(maxSpeedValue);
+      AccelStepper::setAcceleration(maxSpeedValue/3);
     }
 
     void setGearRatio(float ratio) {
@@ -67,7 +67,7 @@ class StepperMotor : public AccelStepper {
       runToPosition();
     }
     
-    void halt() {
+    void haltSteppers() {
        digitalWrite(in1, LOW);
        digitalWrite(in2, LOW);
        digitalWrite(in3, LOW);
