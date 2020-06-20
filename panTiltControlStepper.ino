@@ -1,9 +1,9 @@
 #include "GoBLE.hpp"
 #include "StepperMotor.hpp"
-#define __DEBUG__
+//#define __DEBUG__
 
 
-#define __SOFTWARE_SERIAL__
+//#define __SOFTWARE_SERIAL__
 #ifdef __SOFTWARE_SERIAL__
 #include <SoftwareSerial.h>
 #define BAUD_RATE 9600
@@ -13,8 +13,8 @@
 SoftwareSerial BlueTooth(BT_RX_PIN, BT_TX_PIN);
 _GoBLE<SoftwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #else
-//#define BAUD_RATE 38400
-#define BAUD_RATE 115200
+#define BAUD_RATE 38400
+//#define BAUD_RATE 115200
 #define Console Serial
 #define BlueTooth Serial
 _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
@@ -33,24 +33,24 @@ const int panInterval = 10;
 const int tiltInterval = 10;
 
 // pan tilt mechanism
-const float tiltStepperGearRatio = 48 / 12;
-const float panStepperGearRatio = 69 / 11;
+//const float tiltStepperGearRatio = 48 / 12;
+//const float panStepperGearRatio = 69 / 11;
 
 // camera turret
-//const float tiltStepperGearRatio = 36 / 18;
-//const float panStepperGearRatio = 54 / 18;
+const float tiltStepperGearRatio = 36 / 18;
+const float panStepperGearRatio = 54 / 18;
 
 //pavo
-TiltStepperMotor tiltStepper(tiltStepperGearRatio, 4, 5, 6, 7);
-PanStepperMotor panStepper(panStepperGearRatio, 8, 9, 10, 11);
+//TiltStepperMotor tiltStepper(tiltStepperGearRatio, 4, 5, 6, 7);
+//PanStepperMotor panStepper(panStepperGearRatio, 8, 9, 10, 11);
 
 //apus
 //TiltStepperMotor tiltStepper(tiltStepperGearRatio, 2, 3, 4, 7);
 //PanStepperMotor panStepper(panStepperGearRatio, 8, 11, 12, 13);
 
 //huaduino
-//TiltStepperMotor tiltStepper(tiltStepperGearRatio, 6, 4, 3, 2);
-//PanStepperMotor panStepper(panStepperGearRatio, 7, 5, 13, 12);
+TiltStepperMotor tiltStepper(tiltStepperGearRatio, 6, 4, 3, 2);
+PanStepperMotor panStepper(panStepperGearRatio, 7, 5, 13, 12);
 
 //pro mini
 //TiltStepperMotor tiltStepper(tiltStepperGearRatio, 9, 8, 7, 6);
@@ -83,7 +83,7 @@ void loop() {
 }
 
 void control() {
-  static unsigned long prev_time = 0;
+  static unsigned long prev_time = 0, prev_halt_time = 0;
   unsigned long cur_time;
   char cmd;
 
@@ -111,8 +111,11 @@ void control() {
         BlueTooth.begin(BAUD_RATE);
         break;
       case __HALT:
-        tiltStepper.halt();
-        panStepper.halt();
+        if (cur_time - prev_halt_time >= 3000) {
+          prev_halt_time = cur_time;
+          tiltStepper.haltSteppers();
+          panStepper.haltSteppers();
+        }
         break;
     }
 #ifdef __DEBUG__
