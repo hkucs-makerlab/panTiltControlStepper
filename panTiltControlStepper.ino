@@ -6,7 +6,7 @@
 //#define __SOFTWARE_SERIAL__
 #ifdef __SOFTWARE_SERIAL__
 #include <SoftwareSerial.h>
-#define BAUD_RATE 9600
+#define BAUD_RATE 38400
 #define Console Serial
 #define BT_RX_PIN 2
 #define BT_TX_PIN 3
@@ -33,12 +33,12 @@ const int panInterval = 10;
 const int tiltInterval = 10;
 
 // pan tilt mechanism
-//const float tiltStepperGearRatio = 48 / 12;
-//const float panStepperGearRatio = 69 / 11;
+const float tiltStepperGearRatio = 48 / 12;
+const float panStepperGearRatio = 69 / 11;
 
 // camera turret
-const float tiltStepperGearRatio = 36 / 18;
-const float panStepperGearRatio = 54 / 18;
+//const float tiltStepperGearRatio = 36 / 18;
+//const float panStepperGearRatio = 54 / 18;
 
 //pavo
 //TiltStepperMotor tiltStepper(tiltStepperGearRatio, 4, 5, 6, 7);
@@ -126,10 +126,12 @@ void control() {
 
 char check_goble() {
   static char cmd = __HALT;
+  static long last_cmd_time = 0;
 
   int joystickX = 0;
   int joystickY = 0;
 
+  long now = millis();
   if (Goble.available()) {
     joystickX = Goble.readJoystickX();
     joystickY = Goble.readJoystickY();
@@ -162,6 +164,9 @@ char check_goble() {
     } else if (Goble.readSwitchStart() == PRESSED) {
       revX = !revX;
     }
+    last_cmd_time = now;
+  } else  if (now - 1500 > last_cmd_time ) {
+      cmd = __HALT; 
   }
   return cmd;
 }
