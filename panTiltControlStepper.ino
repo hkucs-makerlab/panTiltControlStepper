@@ -1,27 +1,37 @@
-#include "GoBLE.hpp"
 #include "StepperMotor.hpp"
-//#define __DEBUG__
+#define __DEBUG__
+
+// uncomment one to select the way of control
+//#define __NUNCHUK__
+#define __GOBLE__
+
+#ifdef __NUNCHUK__
+#include "Nunchuk.h"
+#endif
 
 
+#ifdef __GOBLE__
+#include "GoBLE.hpp"
+#define GOBLE_BAUD_RATE 38400
 //#define __SOFTWARE_SERIAL__
 #ifdef __SOFTWARE_SERIAL__
 #include <SoftwareSerial.h>
-#define BAUD_RATE 38400
 #define Console Serial
-#define BT_RX_PIN 2
-#define BT_TX_PIN 3
+#define BT_RX_PIN A0
+#define BT_TX_PIN A1
 SoftwareSerial BlueTooth(BT_RX_PIN, BT_TX_PIN);
 _GoBLE<SoftwareSerial, HardwareSerial> Goble(BlueTooth, Console);
-#else
-#define BAUD_RATE 38400
-//#define BAUD_RATE 115200
+#else // __SOFTWARE_SERIAL__
 #define Console Serial
 #define BlueTooth Serial
 _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
-#endif
+#endif // __SOFTWARE_SERIAL__
+#else
+#define Console Serial
+#endif  //__GOBLE__
 //
 #define __UPWARD 'f'
-#define __DWONWARD 'b'
+#define __DOWNWARD 'b'
 #define __LEFT 'l'
 #define __RIGHT 'r'
 #define __CENTER 'c'
@@ -57,47 +67,56 @@ PanStepperMotor panStepper(panStepperGearRatio, 7, 5, 13, 12);
 //PanStepperMotor panStepper(panStepperGearRatio, 10, 11, 12, 13);
 
 void setup() {
-  Goble.begin(BAUD_RATE);
-#ifdef __DEBUG__
+#ifdef __GOBLE__
+  Goble.begin(GOBLE_BAUD_RATE);
+#elif defined(__NUNCHUK__)
+  nunchuk_init();
+#endif
 #ifdef __SOFTWARE_SERIAL__
   Console.begin(115200);
-#endif
-  Console.println("in debugging mode");
-#endif
-
-#ifdef __DEBUG__
-  Console.println("console started");
-#endif
+#endif  
+  Console.println("started");
 }
 
 void loop() {
-
   //
   //  Console.println(tiltStepper.getPositionDeg());
   //  Console.println(panStepper.getPositionDeg());
-
+  control();
   tiltStepper.run();
   panStepper.run();
-  control();
-
 }
 
 void control() {
-  static unsigned long prev_time = 0, prev_halt_time = 0;
+  static unsigned long prev_time = 0;
+  static unsigned long prev_tilt_halt_time = 0;
+  static unsigned long prev_pan_halt_time = 0;
   unsigned long cur_time;
-  char cmd;
+  static char cmd[2] = {__HALT, __HALT};
 
   cur_time = millis();
-  cmd = check_goble();
+#ifdef __GOBLE__
+  check_goble(cmd);
+#elif defined(__NUNCHUK__)
+  check_nunchuk(cmd);
+#endif
   if (cur_time - prev_time >= 200) {
-    prev_time = cur_time;
-    switch (cmd) {
+    switch (cmd[0]) {
       case __UPWARD:
         tiltStepper.upward(tiltInterval);
         break;
-      case __DWONWARD:
+      case __DOWNWARD:
         tiltStepper.downward(tiltInterval);
         break;
+      case __HALT:
+        if (cur_time - prev_tilt_halt_time >= 3000) {
+          prev_tilt_halt_time = cur_time;
+          tiltStepper.haltSteppers();
+        }
+        break;
+    }
+    //
+    switch (cmd[1]) {
       case __RIGHT:
         panStepper.right(panInterval);
         break;
@@ -105,27 +124,82 @@ void control() {
         panStepper.left(panInterval);
         break;
       case __CENTER:
-        BlueTooth.end();
         tiltStepper.homePosition();
         panStepper.homePosition();
-        BlueTooth.begin(BAUD_RATE);
         break;
       case __HALT:
-        if (cur_time - prev_halt_time >= 3000) {
-          prev_halt_time = cur_time;
-          tiltStepper.haltSteppers();
+        if (cur_time - prev_pan_halt_time >= 3000) {
+          prev_pan_halt_time = cur_time;
           panStepper.haltSteppers();
         }
         break;
     }
-#ifdef __DEBUG__
-    Console.print("cmd: "); Console.println(cmd);
-#endif
+    prev_time = cur_time;
   }
+//
+//  Console.println("cmd0:" + String(cmd[0]) + ", cmd1:" + String(cmd[1]));
+
 }
 
-char check_goble() {
-  static char cmd = __HALT;
+
+#ifdef __NUNCHUK__
+void check_nunchuk(char *cmd) {
+  int joystickX, joystickY, switchState;
+  String msg;
+
+  if (!nunchuk_read()) {
+    cmd[0] = cmd[1] = __HALT;
+    return;
+  }
+
+  //nunchuk_print();
+  if (nunchuk_buttonC() && nunchuk_buttonZ()) {
+    cmd[0] = __CENTER;
+    cmd[1] = __CENTER;
+    return;
+  }
+
+  if (nunchuk_buttonZ()) {
+    //Console.println("Pressed button Z");
+    float pitch_angle = nunchuk_pitch() * 180 / M_PI;
+    if (pitch_angle >= -40 && pitch_angle <= 90) {
+      joystickY = map(pitch_angle, 60, -90, 255, 0);
+    } else {
+      joystickY = 128;
+    }
+    float roll_angle = nunchuk_roll() * 180 / M_PI;
+    if (roll_angle >= -90 && roll_angle <= 90) {
+      joystickX = map(roll_angle, -90, 90, 0, 255);
+    } else {
+      joystickY = 128;
+    }
+//    msg = "Pitch: " + String(pitch_angle) + ", Roll: " + String(roll_angle);
+//    Console.println(msg);
+  } else {
+    joystickX = map(nunchuk_joystickX(), -128, 127, 0, 255);
+    joystickY = map(nunchuk_joystickY(), -128, 127, 0, 255);
+  }
+  //msg = "X: " + String(joystickX) + " ,Y:" + String(joystickY);
+  //Console.println(msg);
+  if (joystickY > 210) {
+    cmd[0] = __UPWARD ;
+  } else if (joystickY < 90) {
+    cmd[0] = __DOWNWARD;
+  } else {
+    cmd[0] = __HALT;
+  }
+  if (joystickX > 190) {
+    cmd[1] = __RIGHT;
+  } else if (joystickX < 50) {
+    cmd[1] = __LEFT ;
+  } else {
+    cmd[1] = __HALT;
+  }
+}
+#endif
+
+#ifdef __GOBLE__
+void check_goble(char *cmd) {
   static long last_cmd_time = 0;
 
   int joystickX = 0;
@@ -137,36 +211,45 @@ char check_goble() {
     joystickY = Goble.readJoystickY();
 
     if (joystickY > 190) {
-      cmd = revY ? __UPWARD : __DWONWARD;
+      cmd[0] = revY ? __UPWARD : __DOWNWARD;
     } else if (joystickY < 80) {
-      cmd = revY ? __DWONWARD : __UPWARD;
-    } else if (joystickX > 190) {
-      cmd = revX ?   __RIGHT : __LEFT;
+      cmd[0] = revY ? __DOWNWARD : __UPWARD;
+    } else {
+      cmd[0] = __HALT;
+    }
+    //
+    if (joystickX > 190) {
+      cmd[1] = revX ?   __RIGHT : __LEFT;
     } else if (joystickX < 80) {
-      cmd = revX ? __LEFT : __RIGHT;
-    } else
-      cmd = __HALT;
+      cmd[1] = revX ? __LEFT : __RIGHT;
+    } else {
+      cmd[1] = __HALT;
+    }
 
     if (Goble.readSwitchUp() == PRESSED) {
-      cmd = revY ? __UPWARD : __DWONWARD;
+      cmd[0] = revY ? __UPWARD : __DOWNWARD;
     } else if (Goble.readSwitchDown() == PRESSED) {
-      cmd = revY ? __DWONWARD : __UPWARD;
-    } else if (Goble.readSwitchLeft() == PRESSED) {
-      cmd = revX ? __LEFT : __RIGHT;
+      cmd[0] = revY ? __DOWNWARD : __UPWARD;
+    }
+    //
+    if (Goble.readSwitchLeft() == PRESSED) {
+      cmd[1] = revX ? __LEFT : __RIGHT;
     } else if (Goble.readSwitchRight() == PRESSED) {
-      cmd = revX ?   __RIGHT : __LEFT;
+      cmd[1] = revX ?   __RIGHT : __LEFT;
     } else if (Goble.readSwitchAction() == PRESSED) {
-      cmd = __CENTER;
+      cmd[1] = __CENTER;
     } else if (Goble.readSwitchMid() == PRESSED) {
-      cmd = __CENTER;
-    } else if (Goble.readSwitchSelect() == PRESSED) {
+      cmd[1] = __CENTER;
+    }
+    //
+    if (Goble.readSwitchSelect() == PRESSED) {
       revY = !revY;
     } else if (Goble.readSwitchStart() == PRESSED) {
       revX = !revX;
     }
     last_cmd_time = now;
   } else  if (now - 1500 > last_cmd_time ) {
-      cmd = __HALT; 
+    cmd[0] = cmd[1] = __HALT;
   }
-  return cmd;
 }
+#endif

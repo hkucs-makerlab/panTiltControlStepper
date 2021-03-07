@@ -41,7 +41,7 @@ class StepperMotor : public AccelStepper {
     }
 
     float getPositionRad() const {
-      return currentPosition() / radToStepFactor;
+      return currentPosition()/ radToStepFactor;
     }
 
     float getPositionDeg() const {
@@ -64,7 +64,7 @@ class StepperMotor : public AccelStepper {
     void homePosition() {
       if (currentPosition() == 0) return;
       move(-currentPosition());
-      runToPosition();
+      //runToPosition();
     }
     
     void haltSteppers() {
