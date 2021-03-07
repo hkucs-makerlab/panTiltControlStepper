@@ -1,20 +1,12 @@
+#include "Config.hpp"
 #include "StepperMotor.hpp"
-#define __DEBUG__
-
-// uncomment one to select the way of control
-//#define __NUNCHUK__
-#define __GOBLE__
 
 #ifdef __NUNCHUK__
 #include "Nunchuk.h"
 #endif
-
-
 #ifdef __GOBLE__
 #include "GoBLE.hpp"
-#define GOBLE_BAUD_RATE 38400
-//#define __SOFTWARE_SERIAL__
-#ifdef __SOFTWARE_SERIAL__
+#ifdef __GOBLE__SOFTWARE_SERIAL__
 #include <SoftwareSerial.h>
 #define Console Serial
 #define BT_RX_PIN A0
@@ -37,34 +29,23 @@ _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #define __CENTER 'c'
 #define __HALT 'h'
 
+#ifdef __PAN_TILT_MECHANISM__
+// pan tilt mechanism
+const float tiltStepperGearRatio = 48 / 12;
+const float panStepperGearRatio = 69 / 11;
+#else
+// camera turret
+const float tiltStepperGearRatio = 36 / 18;
+const float panStepperGearRatio = 54 / 18;
+#endif
+
 boolean revX = false;
 boolean revY = false;
 const int panInterval = 10;
 const int tiltInterval = 10;
 
-// pan tilt mechanism
-const float tiltStepperGearRatio = 48 / 12;
-const float panStepperGearRatio = 69 / 11;
-
-// camera turret
-//const float tiltStepperGearRatio = 36 / 18;
-//const float panStepperGearRatio = 54 / 18;
-
-//pavo
-//TiltStepperMotor tiltStepper(tiltStepperGearRatio, 4, 5, 6, 7);
-//PanStepperMotor panStepper(panStepperGearRatio, 8, 9, 10, 11);
-
-//apus
-//TiltStepperMotor tiltStepper(tiltStepperGearRatio, 2, 3, 4, 7);
-//PanStepperMotor panStepper(panStepperGearRatio, 8, 11, 12, 13);
-
-//huaduino
-TiltStepperMotor tiltStepper(tiltStepperGearRatio, 6, 4, 3, 2);
-PanStepperMotor panStepper(panStepperGearRatio, 7, 5, 13, 12);
-
-//pro mini
-//TiltStepperMotor tiltStepper(tiltStepperGearRatio, 9, 8, 7, 6);
-//PanStepperMotor panStepper(panStepperGearRatio, 10, 11, 12, 13);
+TiltStepperMotor tiltStepper(tiltStepperGearRatio, TILT_IN1, TILT_IN2, TILT_IN3, TILT_IN4);
+PanStepperMotor panStepper(panStepperGearRatio, PAN_IN1, PAN_IN2, PAN_IN3, PAN_IN4);
 
 void setup() {
 #ifdef __GOBLE__
