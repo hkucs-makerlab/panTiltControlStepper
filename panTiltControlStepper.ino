@@ -29,20 +29,64 @@ _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #define __CENTER 'c'
 #define __HALT 'h'
 
+#ifdef __HUADUINO__
+#define TILT_IN1  6
+#define TILT_IN2  4
+#define TILT_IN3  3
+#define TILT_IN4  2
+#define PAN_IN1   7
+#define PAN_IN2   5
+#define PAN_IN3   13
+#define PAN_IN4   12
+#elif defined(__PAVO__)
+#define TILT_IN1  4
+#define TILT_IN2  5
+#define TILT_IN3  6
+#define TILT_IN4  7
+#define PAN_IN1   8
+#define PAN_IN2   9
+#define PAN_IN3   10
+#define PAN_IN4   11
+#elif defined(__APUS__)
+#define TILT_IN1  2
+#define TILT_IN2  3
+#define TILT_IN3  4
+#define TILT_IN4  7
+#define PAN_IN1   8
+#define PAN_IN2   11
+#define PAN_IN3   12
+#define PAN_IN4   13
+#elif defined (__PRO_MINI__)
+#define TILT_IN1  9
+#define TILT_IN2  8
+#define TILT_IN3  7
+#define TILT_IN4  6
+#define PAN_IN1   10
+#define PAN_IN2   11
+#define PAN_IN3   12
+#define PAN_IN4   13
+#endif
+
 #ifdef __PAN_TILT_MECHANISM__
-// pan tilt mechanism
-const float tiltStepperGearRatio = 48 / 12;
-const float panStepperGearRatio = 69 / 11;
+#define TILT_GEAR_RATIO (48 / 12)
+#define PAN_GEAR_RATIO  (69 / 11)
+#elif defined(__CAMERA_TURRET__)
+#define TILT_GEAR_RATIO (36 / 18)
+#define PAN_GEAR_RATIO  (36 / 18)
+#elif defined(__GIMBAL_PANORAMAS__)
+#define TILT_GEAR_RATIO (40 / 10)
+#define PAN_GEAR_RATIO  (40 / 10)
 #else
-// camera turret
-const float tiltStepperGearRatio = 36 / 18;
-const float panStepperGearRatio = 54 / 18;
+#define TILT_GEAR_RATIO 1
+#define PAN_GEAR_RATIO  1
 #endif
 
 boolean revX = false;
 boolean revY = false;
 const int panInterval = 10;
 const int tiltInterval = 10;
+const float tiltStepperGearRatio = TILT_GEAR_RATIO;
+const float panStepperGearRatio = PAN_GEAR_RATIO;
 
 TiltStepperMotor tiltStepper(tiltStepperGearRatio, TILT_IN1, TILT_IN2, TILT_IN3, TILT_IN4);
 PanStepperMotor panStepper(panStepperGearRatio, PAN_IN1, PAN_IN2, PAN_IN3, PAN_IN4);
