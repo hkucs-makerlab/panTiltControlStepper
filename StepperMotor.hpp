@@ -40,11 +40,11 @@ class StepperMotor : public AccelStepper {
       radToStepFactor = ratedStepsPerRevolution / 2 / PI;
     }
 
-    float getPositionRad() const {
+    float getPositionRad() {
       return currentPosition()/ radToStepFactor;
     }
 
-    float getPositionDeg() const {
+    float getPositionDeg() {
       return getPositionRad() * 180 / PI;
     }
 
