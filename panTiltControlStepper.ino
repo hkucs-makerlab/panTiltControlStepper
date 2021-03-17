@@ -181,11 +181,11 @@ void control() {
       break;
   }
   //
-//  static unsigned long prev_time = 0;
-//  if (cur_time - prev_time >= 200) {
-//    prev_time = cur_time;
-//    Console.println("cmd0:" + String(cmd[0]) + ", cmd1:" + String(cmd[1]));
-//  }
+  //  static unsigned long prev_time = 0;
+  //  if (cur_time - prev_time >= 200) {
+  //    prev_time = cur_time;
+  //    Console.println("cmd0:" + String(cmd[0]) + ", cmd1:" + String(cmd[1]));
+  //  }
 }
 
 #ifdef __JOYSTCIK__
@@ -227,7 +227,7 @@ void check_nunchuk(char *cmd) {
   static long last_nunchuk_time = 0;
   int joystickX, joystickY, switchState;
   String msg;
-
+  long now = millis();
   if (now - 200 > last_nunchuk_time) {
     if (!nunchuk_read()) {
       cmd[0] = cmd[1] = __HALT;
