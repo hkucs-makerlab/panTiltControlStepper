@@ -1,5 +1,6 @@
 #include "Config.hpp"
 #include "StepperMotor.hpp"
+#include "GPIOServo.hpp"
 
 #ifdef __NUNCHUK__
 #include "Nunchuk.h"
@@ -39,6 +40,7 @@ _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #define PAN_IN2   5
 #define PAN_IN3   13
 #define PAN_IN4   12
+#define ROLL_PIN  10
 #elif defined(__PAVO__)
 #define TILT_IN1  4
 #define TILT_IN2  5
@@ -74,8 +76,10 @@ _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #define JOYSTICK_Y_PIN       A5
 #ifdef __HUADUINO__
 #define JOYSTICK_SWITCH_PIN  9
+#define ROLL_PIN  10
 #else
 #define JOYSTICK_SWITCH_PIN  5
+#define ROLL_PIN  A2
 #endif //__HUADUINO__
 #endif
 
@@ -102,6 +106,7 @@ const float panStepperGearRatio = PAN_GEAR_RATIO;
 
 TiltStepperMotor tiltStepper(tiltStepperGearRatio, TILT_IN1, TILT_IN2, TILT_IN3, TILT_IN4);
 PanStepperMotor panStepper(panStepperGearRatio, PAN_IN1, PAN_IN2, PAN_IN3, PAN_IN4);
+GPIOservo rollServo(ROLL_PIN);
 
 void setup() {
 #ifdef __GOBLE__
@@ -113,6 +118,7 @@ void setup() {
 #ifdef __JOYSTCIK__
   pinMode(JOYSTICK_SWITCH_PIN, INPUT_PULLUP);
 #endif
+  rollServo.attach();
 #ifdef __SOFTWARE_SERIAL__
   Console.begin(115200);
 #endif
@@ -133,7 +139,7 @@ void control() {
   static unsigned long prev_pan_halt_time = 0;
   unsigned long cur_time;
   bool rc = false;
-  static char cmd[2] = {__HALT, __HALT};
+  static char cmd[3] = {__HALT, __HALT, __HALT};
 
   cur_time = millis();
 #ifdef __GOBLE__
@@ -180,12 +186,19 @@ void control() {
       }
       break;
   }
-  //
-  //  static unsigned long prev_time = 0;
-  //  if (cur_time - prev_time >= 200) {
-  //    prev_time = cur_time;
-  //    Console.println("cmd0:" + String(cmd[0]) + ", cmd1:" + String(cmd[1]));
-  //  }
+
+  switch (cmd[2]) {
+    case __RIGHT:
+      rollServo.move(180);
+      break;
+    case __LEFT:
+      rollServo.move(0);
+      break;
+    case __CENTER:
+      rollServo.move(90);
+      break;
+  }
+
 }
 
 #ifdef __JOYSTCIK__
@@ -309,21 +322,27 @@ bool check_goble(char *cmd) {
     } else {
       cmd[1] = __HALT;
     }
-
+    //
     if (Goble.readSwitchUp() == PRESSED) {
       cmd[0] = revY ? __UPWARD : __DOWNWARD;
     } else if (Goble.readSwitchDown() == PRESSED) {
       cmd[0] = revY ? __DOWNWARD : __UPWARD;
     }
     //
-    if (Goble.readSwitchLeft() == PRESSED) {
+     if (Goble.readSwitchLeft() == PRESSED) {
       cmd[1] = revX ? __LEFT : __RIGHT;
     } else if (Goble.readSwitchRight() == PRESSED) {
       cmd[1] = revX ?   __RIGHT : __LEFT;
     } else if (Goble.readSwitchAction() == PRESSED) {
       cmd[1] = __CENTER;
+    }
+    //
+    if (Goble.readSwitchPanLf() == PRESSED) {
+      cmd[2] =__LEFT;
+    } else if (Goble.readSwitchPanRt() == PRESSED) {
+      cmd[2] =__RIGHT;
     } else if (Goble.readSwitchMid() == PRESSED) {
-      cmd[1] = __CENTER;
+      cmd[2] = __CENTER;
     }
     //
     if (Goble.readSwitchSelect() == PRESSED) {
@@ -331,6 +350,7 @@ bool check_goble(char *cmd) {
     } else if (Goble.readSwitchStart() == PRESSED) {
       revX = !revX;
     }
+    //
     last_cmd_time = now;
     rc = true;
   } else  if (now - 1500 > last_cmd_time ) {
