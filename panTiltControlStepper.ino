@@ -277,6 +277,7 @@ void check_nunchuk(char *cmd) {
     } else {
       cmd[1] = __HALT;
     }
+    last_nunchuk_time = now;
   }
 }
 #endif
