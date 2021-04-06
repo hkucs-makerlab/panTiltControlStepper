@@ -128,7 +128,7 @@ class GPIOservo {
   private:
     int pinIndex;
     int gpioServoMin = 550;
-    int gpioServoMax = 2550;
+    int gpioServoMax = 2500;
     //const int gpioServoMax = 2350;
     Servo gpioServos;
     //
