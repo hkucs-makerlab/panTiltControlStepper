@@ -239,31 +239,26 @@ void check_joystick( char *cmd) {
 
 void check_joystick2(char *cmd) {
   static long last_joystick_time = 0;
-  static int value = 1;
-  char tmp[3] = {__LEFT, __CENTER, __RIGHT};
-
+   int pan, roll;
   long now = millis();
   if (now - 100 > last_joystick_time) {
-    int xPosition = analogRead(JOYSTICK2_X_PIN);
-    int yPosition = analogRead(JOYSTICK2_Y_PIN);
-    int SW_state = digitalRead(JOYSTICK2_SWITCH_PIN);
-    if (xPosition < 200) {
+    pan = map(analogRead(JOYSTICK2_X_PIN), 0, 1023, 0, 255);
+    if (pan > 190) {
+      cmd[0] =  __UPWARD;
+    } else if (pan < 50) {
+      cmd[0] = __DOWNWARD ;
+    } else {
+      cmd[0] = __HALT;
+    }
+    int roll = analogRead(JOYSTICK2_Y_PIN);
+    if (roll < 200) {
       cmd[2] = __LEFT;
-    } else if (xPosition > 1000) {
+    } else if (roll > 1000) {
       cmd[2] = __RIGHT;
-    } else if (SW_state == 0) {
+    } else  if (digitalRead(JOYSTICK2_SWITCH_PIN) == 0) {
       cmd[2] = __CENTER;
     }
-
     last_joystick_time = now;
-//    Console.print("X: ");
-//    Console.print(xPosition);
-//    Console.print(" | Y: ");
-//    Console.print(yPosition);
-//    Console.print(" | Button: ");
-//    Console.print(SW_state);
-//    Console.print(" | Value: ");
-//    Console.println(cmd[2]);
   }
 }
 #endif
