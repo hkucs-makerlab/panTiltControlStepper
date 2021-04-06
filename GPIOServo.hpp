@@ -89,7 +89,6 @@ class GPIOservo {
       }
       currentTime = millis();
       if (currentTime - prevTime >= angleTimeGap) {
-        long diffTime = currentTime - prevTime;
         prevTime = currentTime;
         this->write(angle);
         if (targetAngle < angle) {
@@ -98,7 +97,7 @@ class GPIOservo {
         } else {
           angle++;
           if (angle > 180) angle = 180;
-        }
+        }        
       }
       return false;
     }
