@@ -108,7 +108,7 @@ const float panStepperGearRatio = PAN_GEAR_RATIO;
 
 TiltStepperMotor tiltStepper(tiltStepperGearRatio, TILT_IN1, TILT_IN2, TILT_IN3, TILT_IN4);
 PanStepperMotor panStepper(panStepperGearRatio, PAN_IN1, PAN_IN2, PAN_IN3, PAN_IN4);
-GPIOservo rollServo(ROLL_PIN);
+PhoneClickServo phoneClickServo(ROLL_PIN);
 
 void setup() {
 #ifdef __GOBLE__
@@ -121,7 +121,7 @@ void setup() {
   pinMode(JOYSTICK1_SWITCH_PIN, INPUT_PULLUP);
   pinMode(JOYSTICK2_SWITCH_PIN, INPUT_PULLUP);
 #endif
-  rollServo.attach();
+  phoneClickServo.attach();
 #ifdef __SOFTWARE_SERIAL__
   Console.begin(115200);
 #endif
@@ -142,7 +142,7 @@ void control() {
   static unsigned long prev_pan_halt_time = 0;
   unsigned long cur_time;
   bool rc = false;
-  static char cmd[3] = {__HALT, __HALT, __HALT};
+  static char cmd[3] = {__HALT, __HALT, __CENTER};
 
   cur_time = millis();
 #ifdef __GOBLE__
@@ -152,7 +152,7 @@ void control() {
 #if defined(__NUNCHUK__)
     check_nunchuk(cmd);
 #elif defined(__JOYSTCIK__)
-    check_joystick(cmd);
+    //check_joystick(cmd);
     check_joystick2(cmd);
 #endif
   }
@@ -190,16 +190,15 @@ void control() {
       }
       break;
   }
-
   switch (cmd[2]) {
     case __RIGHT:
-      rollServo.move(180);
+      phoneClickServo.turnRight();
       break;
     case __LEFT:
-      rollServo.move(0);
+      phoneClickServo.turnLeft();
       break;
     case __CENTER:
-      rollServo.move(90);
+      phoneClickServo.center();
       break;
   }
 
@@ -251,7 +250,7 @@ void check_joystick2(char *cmd) {
       cmd[0] = __HALT;
     }
     int roll = analogRead(JOYSTICK2_Y_PIN);
-    if (roll < 200) {
+    if (roll < 50) {
       cmd[2] = __LEFT;
     } else if (roll > 1000) {
       cmd[2] = __RIGHT;

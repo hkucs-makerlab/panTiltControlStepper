@@ -13,8 +13,8 @@
 //#define __GOBLE__SOFTWARE_SERIAL__
 #endif
 //
-//#define __GIMBAL_PANORAMAS__
-#define __PAN_TILT_MECHANISM__
+#define __GIMBAL_PANORAMAS__
+//#define __PAN_TILT_MECHANISM__
 //#define __CAMERA_TURRET__
 //
 #define __HUADUINO__

@@ -49,7 +49,11 @@ class GPIOservo {
       if (attached) {
         return attached;
       }
-      gpioServos.attach(pinIndex, gpioServoMin, gpioServoMax);
+      if (gpioServoMin > 0 && gpioServoMax > 0) {
+        gpioServos.attach(pinIndex, gpioServoMin, gpioServoMax);
+      } else {
+        gpioServos.attach(pinIndex);
+      }
       gpioServos.write(angle);
       prevTime = millis();
       return attached = true;
@@ -70,14 +74,14 @@ class GPIOservo {
       if (angle != this->angle) this->angle = angle;
     }
 
-    void writeMicroseconds(long us) {
-      if (!attached) {
-        return;
-      }
-      int deg = map(us, gpioServoMin, gpioServoMax, 0, 180);
-      if (deg != this->angle) this->angle = deg;
-      gpioServos.writeMicroseconds(us);
-    }
+    //    void writeMicroseconds(long us) {
+    //      if (!attached) {
+    //        return;
+    //      }
+    //      int deg = map(us, gpioServoMin, gpioServoMax, 0, 180);
+    //      if (deg != this->angle) this->angle = deg;
+    //      gpioServos.writeMicroseconds(us);
+    //    }
 
     int getAngle() {
       return angle;
@@ -97,7 +101,7 @@ class GPIOservo {
         } else {
           angle++;
           if (angle > 180) angle = 180;
-        }        
+        }
       }
       return false;
     }
@@ -127,9 +131,8 @@ class GPIOservo {
 
   private:
     int pinIndex;
-    int gpioServoMin = 550;
-    int gpioServoMax = 2500;
-    //const int gpioServoMax = 2350;
+    int gpioServoMin = 0;
+    int gpioServoMax = 0;
     Servo gpioServos;
     //
     const short angleTimeGap = 20;
@@ -139,4 +142,25 @@ class GPIOservo {
     //
     bool attached;
 };
+
+class PhoneClickServo : public GPIOservo {
+  public:
+    PhoneClickServo(int pinIndex ): GPIOservo(pinIndex) {
+
+    }
+    void turnLeft() {
+      move(leftAngle);
+    }
+    void turnRight() {
+      move(rightAngle);
+    }
+    void center() {
+      move(centerAngle);
+    }
+  private:
+    const int leftAngle = 15;
+    const int rightAngle = 165;
+    const int centerAngle = 85;
+};
+
 #endif
