@@ -78,11 +78,17 @@ _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #define JOYSTICK1_SWITCH_PIN  5
 #endif
 
-#ifdef __JOYSTCIK__
+#ifdef __JOYSTCIK1__
 #define JOYSTICK1_X_PIN  A4
 #define JOYSTICK1_Y_PIN  A5
+#endif
+#ifdef __JOYSTCIK2__
 #define JOYSTICK2_X_PIN  A2
 #define JOYSTICK2_Y_PIN  A3
+#endif
+
+#ifdef __BUTTON_PAD__
+#define BUTTON_PAD_PIN  A2
 #endif
 
 #ifdef __PAN_TILT_MECHANISM__
@@ -117,8 +123,10 @@ void setup() {
 #if defined(__NUNCHUK__)
   nunchuk_init();
 #endif
-#ifdef __JOYSTCIK__
+#ifdef __JOYSTCIK1__
   pinMode(JOYSTICK1_SWITCH_PIN, INPUT_PULLUP);
+#endif
+#ifdef __JOYSTCIK2__
   pinMode(JOYSTICK2_SWITCH_PIN, INPUT_PULLUP);
 #endif
   phoneClickServo.attach();
@@ -151,9 +159,13 @@ void control() {
   if (!rc) {
 #if defined(__NUNCHUK__)
     check_nunchuk(cmd);
-#elif defined(__JOYSTCIK__)
-    //check_joystick(cmd);
+#elif defined(__JOYSTCIK1__)
+    check_joystick(cmd);
+#ifdef  __JOYSTCIK2__
     check_joystick2(cmd);
+#endif
+#elif defined(__BUTTON_PAD__)
+    check_button_pad(cmd);
 #endif
   }
 
@@ -204,7 +216,50 @@ void control() {
 
 }
 
-#ifdef __JOYSTCIK__
+#ifdef __BUTTON_PAD__
+void check_button_pad( char *cmd) {
+  static long last_check_time = 0;
+  const int maxValue = 3;
+  const int mid = maxValue / 2;
+  static int count = mid;
+
+  long now = millis();
+  if (now - 150 > last_check_time) {
+    last_check_time = now;
+    int b = analogRead(BUTTON_PAD_PIN);
+    if (b == 0) {
+      count++;  // left
+    } else if (b < 40) {
+      cmd[0] =  __DOWNWARD;// up
+    } else if (b < 90) {
+      cmd[0] =   __UPWARD; // down
+    } else if (b < 200) {
+      count--; // right
+    } else if (b < 400) {
+      count = mid; // center
+    } else {
+      cmd[0] = __HALT;
+    }
+    //
+    if (count > maxValue - 1) {
+      count = maxValue - 1;
+    } if (count < 0) {
+      count = 0;
+    }
+    switch (count) {
+      case 0: cmd[2] = __LEFT;
+        break;
+      case 1:  cmd[2] = __CENTER;
+        break;
+      case 2: cmd[2] = __RIGHT;
+        break;
+    }
+  }
+
+}
+#endif
+
+#ifdef __JOYSTCIK1__
 void check_joystick( char *cmd) {
   static long last_joystick_time = 0;
   int tilt, pan, fire;
@@ -233,12 +288,15 @@ void check_joystick( char *cmd) {
       cmd[0] = __CENTER;
       cmd[1] = __CENTER;
     }
+    last_joystick_time = now;
   }
 }
+#endif
 
+#ifdef __JOYSTCIK2__
 void check_joystick2(char *cmd) {
   static long last_joystick_time = 0;
-   int pan, roll;
+  int pan, roll;
   long now = millis();
   if (now - 100 > last_joystick_time) {
     pan = map(analogRead(JOYSTICK2_X_PIN), 0, 1023, 0, 255);

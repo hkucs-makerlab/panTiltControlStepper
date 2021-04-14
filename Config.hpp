@@ -4,7 +4,9 @@
 #define __DEBUG__
 
 // uncomment one to select the way of control
-#define __JOYSTCIK__
+#define __BUTTON_PAD__
+//#define __JOYSTCIK1__
+//#define __JOYSTCIK2__
 //#define __NUNCHUK__
 #define __GOBLE__
 

@@ -158,9 +158,9 @@ class PhoneClickServo : public GPIOservo {
       move(centerAngle);
     }
   private:
-    const int leftAngle = 15;
-    const int rightAngle = 165;
-    const int centerAngle = 85;
+    const int leftAngle = 0;
+    const int rightAngle = 180;
+    const int centerAngle = 90;
 };
 
 #endif
