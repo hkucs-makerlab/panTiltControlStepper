@@ -161,11 +161,12 @@ void control() {
     check_nunchuk(cmd);
 #elif defined(__JOYSTCIK1__)
     check_joystick(cmd);
-#ifdef  __JOYSTCIK2__
-    check_joystick2(cmd);
 #endif
-#elif defined(__BUTTON_PAD__)
+    
+#if defined(__BUTTON_PAD__)
     check_button_pad(cmd);
+#elif defined (__JOYSTCIK2__)
+    check_joystick2(cmd);
 #endif
   }
 
@@ -261,10 +262,10 @@ void check_button_pad( char *cmd) {
 
 #ifdef __JOYSTCIK1__
 void check_joystick( char *cmd) {
-  static long last_joystick_time = 0;
+  static long last_check_time = 0;
   int tilt, pan, fire;
   long now = millis();
-  if (now - 200 > last_joystick_time) {
+  if (now - 200 > last_check_time) {
     pan = map(analogRead(JOYSTICK1_X_PIN), 0, 1023, 0, 255);
     if (pan > 190) {
       cmd[0] =  __UPWARD;
@@ -288,45 +289,62 @@ void check_joystick( char *cmd) {
       cmd[0] = __CENTER;
       cmd[1] = __CENTER;
     }
-    last_joystick_time = now;
+    last_check_time = now;
   }
 }
 #endif
 
 #ifdef __JOYSTCIK2__
 void check_joystick2(char *cmd) {
-  static long last_joystick_time = 0;
-  int pan, roll;
+  static long last_check_time = 0;
+  const int maxValue = 3;
+  const int mid = maxValue / 2;
+  static int count = mid;
+
   long now = millis();
-  if (now - 100 > last_joystick_time) {
-    pan = map(analogRead(JOYSTICK2_X_PIN), 0, 1023, 0, 255);
-    if (pan > 190) {
+  if (now - 300 > last_check_time) {
+    last_check_time = now;
+    int value = map(analogRead(JOYSTICK2_X_PIN), 0, 1023, 0, 255);
+    if (value > 190) {
       cmd[0] =  __UPWARD;
-    } else if (pan < 50) {
+    } else if (value < 50) {
       cmd[0] = __DOWNWARD ;
     } else {
       cmd[0] = __HALT;
     }
-    int roll = analogRead(JOYSTICK2_Y_PIN);
-    if (roll < 50) {
-      cmd[2] = __LEFT;
-    } else if (roll > 1000) {
-      cmd[2] = __RIGHT;
+    value = analogRead(JOYSTICK2_Y_PIN);
+    if (value < 50) {
+      count++;
+    } else if (value > 1000) {
+      count--;
     } else  if (digitalRead(JOYSTICK2_SWITCH_PIN) == 0) {
-      cmd[2] = __CENTER;
+      count = mid;
     }
-    last_joystick_time = now;
+    if (count > maxValue - 1) {
+      count = maxValue - 1;
+    } if (count < 0) {
+      count = 0;
+    }
+    switch (count) {
+      case 0: cmd[2] = __RIGHT ;
+        break;
+      case 1: cmd[2] = __CENTER;
+        break;
+      case 2: cmd[2] = __LEFT ;
+        break;
+    }
   }
 }
 #endif
 
 #ifdef __NUNCHUK__
 void check_nunchuk(char *cmd) {
-  static long last_nunchuk_time = 0;
+  static long last_check_time = 0;
   int joystickX, joystickY, switchState;
   String msg;
   long now = millis();
-  if (now - 200 > last_nunchuk_time) {
+  if (now - 200 > last_check_time) {
+    last_check_time = now;
     if (!nunchuk_read()) {
       cmd[0] = cmd[1] = __HALT;
       return;
@@ -375,7 +393,6 @@ void check_nunchuk(char *cmd) {
     } else {
       cmd[1] = __HALT;
     }
-    last_nunchuk_time = now;
   }
 }
 #endif
