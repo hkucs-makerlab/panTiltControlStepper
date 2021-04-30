@@ -161,6 +161,7 @@ class PhoneClickServo : public GPIOservo {
     const int leftAngle = 0;
     const int rightAngle = 180;
     const int centerAngle = 90;
+
 };
 
 #endif
