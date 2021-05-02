@@ -23,6 +23,18 @@ _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #else
 #define Console Serial
 #endif  //__GOBLE__
+
+#ifdef __JOYSTCIK1__
+#define JOYSTICK1_X_PIN  A4
+#define JOYSTICK1_Y_PIN  A5
+#endif
+#ifdef __JOYSTCIK2__
+#define JOYSTICK2_X_PIN  A2
+#define JOYSTICK2_Y_PIN  A3
+#endif
+#ifdef __BUTTON_PAD__
+#define BUTTON_PAD_PIN   A2
+#endif
 //
 #define __UPWARD 'f'
 #define __DOWNWARD 'b'
@@ -40,7 +52,7 @@ _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #define PAN_IN2   5
 #define PAN_IN3   13
 #define PAN_IN4   12
-#define ROLL_PIN  10
+#define SERVO_PIN  10
 #define JOYSTICK1_SWITCH_PIN 9
 #define JOYSTICK2_SWITCH_PIN 8
 #elif defined(__PAVO__)
@@ -52,8 +64,9 @@ _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #define PAN_IN2   9
 #define PAN_IN3   10
 #define PAN_IN4   11
-#define ROLL_PIN  A2
-#define JOYSTICK1_SWITCH_PIN  5
+#define SERVO_PIN  12
+#define JOYSTICK1_SWITCH_PIN 2
+#define JOYSTICK2_SWITCH_PIN 3
 #elif defined(__APUS__)
 #define TILT_IN1  2
 #define TILT_IN2  3
@@ -63,8 +76,9 @@ _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #define PAN_IN2   11
 #define PAN_IN3   12
 #define PAN_IN4   13
-#define ROLL_PIN  A2
-#define JOYSTICK1_SWITCH_PIN  5
+#define SERVO_PIN  6
+#define JOYSTICK1_SWITCH_PIN 9
+#define JOYSTICK2_SWITCH_PIN 10
 #elif defined (__PRO_MINI__)
 #define TILT_IN1  9
 #define TILT_IN2  8
@@ -74,21 +88,9 @@ _GoBLE<HardwareSerial, HardwareSerial> Goble(BlueTooth, Console);
 #define PAN_IN2   11
 #define PAN_IN3   12
 #define PAN_IN4   13
-#define ROLL_PIN  A2
-#define JOYSTICK1_SWITCH_PIN  5
-#endif
-
-#ifdef __JOYSTCIK1__
-#define JOYSTICK1_X_PIN  A4
-#define JOYSTICK1_Y_PIN  A5
-#endif
-#ifdef __JOYSTCIK2__
-#define JOYSTICK2_X_PIN  A2
-#define JOYSTICK2_Y_PIN  A3
-#endif
-
-#ifdef __BUTTON_PAD__
-#define BUTTON_PAD_PIN  A2
+#define SERVO_PIN  2
+#define JOYSTICK1_SWITCH_PIN 3
+#define JOYSTICK2_SWITCH_PIN 4
 #endif
 
 #ifdef __PAN_TILT_MECHANISM__
@@ -114,7 +116,7 @@ const float panStepperGearRatio = PAN_GEAR_RATIO;
 
 TiltStepperMotor tiltStepper(tiltStepperGearRatio, TILT_IN1, TILT_IN2, TILT_IN3, TILT_IN4);
 PanStepperMotor panStepper(panStepperGearRatio, PAN_IN1, PAN_IN2, PAN_IN3, PAN_IN4);
-PhoneClickServo phoneClickServo(ROLL_PIN);
+PhoneClickServo phoneClickServo(SERVO_PIN);
 
 void setup() {
 #ifdef __GOBLE__
@@ -284,7 +286,7 @@ void check_button_pad( char *cmd) {
     switch (count) {
       case 0: cmd[ROTATE_INDEX] = __LEFT;
         break;
-      case 1:  cmd[ROTATE_INDEX] = __CENTER;
+      case 1: cmd[ROTATE_INDEX] = __CENTER;
         break;
       case 2: cmd[ROTATE_INDEX] = __RIGHT;
         break;
